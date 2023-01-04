@@ -1,4 +1,4 @@
-package main
+package scanner
 
 import (
 	"bufio"
@@ -21,18 +21,13 @@ type Scanner struct {
 	current  int     // 当前扫描的位置
 }
 
-func main() {
-	args := os.Args
-	// 1. 如果传参大于1个，报错
-	if len(args) > 2 {
-		fmt.Println("usage: glox [script]")
-		return
-	}
+// StartScanner 开始扫描
+func StartScanner(args []string) {
 
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync() // flushes buffer, if any
 	sugar := logger.Sugar()
-	scanner := Scanner{
+	s := Scanner{
 		Logger:   sugar,
 		HadError: false,
 		line:     1,
@@ -41,9 +36,9 @@ func main() {
 	}
 	// 2. 如果传参为1个，表示文件名称
 	if len(args) == 2 {
-		scanner.runFile(args[1])
+		s.runFile(args[1])
 	} else {
-		scanner.runPrompt()
+		s.runPrompt()
 	}
 
 }

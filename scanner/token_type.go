@@ -1,4 +1,4 @@
-package main
+package scanner
 
 // TokenType 定义token类型，使用 go enum 类型
 type TokenType int
