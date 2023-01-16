@@ -14,6 +14,7 @@ more details about glox, you can find [here](https://www.poetries.cn/reading/tec
 |---|---|---|---|
 | 1 | `go run cmd/scanner/main.go` | start a scanner interactive| ![scanner](https://github.com/Kua-Fu/blog-book-images/blob/main/glox/scanner.png?raw=true)|
 | 2 | `go run cmd/astprinter/main.go` | start a demo ast printer | ![astprinter](https://github.com/Kua-Fu/blog-book-images/blob/main/glox/astprinter.png?raw=true)|
+| 3 | `go run cmd/parser/main.go` | start parse | ![parser](https://github.com/Kua-Fu/blog-book-images/blob/main/glox/parser.png?raw=true)|
 
 
 
