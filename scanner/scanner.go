@@ -10,16 +10,18 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	l *zap.SugaredLogger
+)
+
 // Scanner 扫描器
 type Scanner struct {
-	Logger   *zap.SugaredLogger
-	HadError bool
-	source   string        // source code
-	runes    []rune        // source code rune slice
-	tokens   []token.Token // tokens
-	line     int           // location
-	start    int           // token start location
-	current  int           // token current location
+	source  string        // source code
+	runes   []rune        // source code rune slice
+	tokens  []token.Token // tokens
+	line    int           // location
+	start   int           // token start location
+	current int           // token current location
 }
 
 // ScannerLine start scanner
@@ -27,13 +29,11 @@ func ScannerLine(line string) ([]token.Token, error) {
 
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync() // flushes buffer, if any
-	sugar := logger.Sugar()
+	l = logger.Sugar()
 	s := Scanner{
-		Logger:   sugar,
-		HadError: false,
-		line:     1,
-		start:    0,
-		current:  0,
+		line:    1,
+		start:   0,
+		current: 0,
 	}
 	s.run(line, false)
 	return s.tokens, nil
@@ -42,41 +42,45 @@ func ScannerLine(line string) ([]token.Token, error) {
 
 // StartScanner start scanner
 func StartScanner(args []string) ([]token.Token, error) {
-
+	var (
+		err error
+	)
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync() // flushes buffer, if any
-	sugar := logger.Sugar()
+	l = logger.Sugar()
 	s := Scanner{
-		Logger:   sugar,
-		HadError: false,
-		line:     1,
-		start:    0,
-		current:  0,
+		line:    1,
+		start:   0,
+		current: 0,
 	}
 	// 2. if only one arg, is source file name
 	if len(args) == 2 {
-		s.runFile(args[1])
+		err = s.runFile(args[1])
 	} else {
-		s.runPrompt()
+		err = s.runPrompt()
+	}
+	if err != nil {
+		return s.tokens, err
 	}
 
 	return s.tokens, nil
 
 }
 
-func (s *Scanner) runFile(path string) {
+func (s *Scanner) runFile(path string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Printf("read file: %s, err: %v \n", path, err)
-		return
+		return err
 	}
-	s.run(string(data), true)
-	if s.HadError {
-		os.Exit(65)
-	}
+	return s.run(string(data), true)
+
 }
 
-func (s *Scanner) runPrompt() {
+func (s *Scanner) runPrompt() error {
+	var (
+		err error
+	)
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
@@ -85,51 +89,52 @@ func (s *Scanner) runPrompt() {
 		if line == "" {
 			break
 		}
-		s.run(line, true)
-		s.HadError = false
+		err = s.run(line, true)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (s *Scanner) run(source string, print bool) {
-	// s.Logger.Infof("--run scanner: %s--\n", source)
+func (s *Scanner) run(source string, print bool) error {
+	var (
+		err error
+	)
 	s.source = source
 	s.runes = []rune(source)
 	s.tokens = []token.Token{}
 	s.start = 0
 	s.current = 0
-	s.line = 1
-	s.HadError = false
-	s.scanTokens()
+	s.line = 0
+	err = s.scanTokens()
+	if err != nil {
+		return err
+	}
 	if print {
 		for _, token := range s.tokens {
-			s.Logger.Info(token)
+			l.Info(token)
 		}
 	}
-
-}
-
-func (s *Scanner) error(line int, message string) {
-	s.report(line, "", message)
-
-}
-
-func (s *Scanner) report(line int, where, message string) {
-
-	s.Logger.Errorf(
-		"[line %d] Error %s: %s", line, where, message,
-	)
-
-	s.HadError = true
+	return nil
 }
 
 func (s *Scanner) isAtEnd() bool {
 	return s.current >= len(s.runes)
 }
 
-func (s *Scanner) scanTokens() {
+// scan tokens
+func (s *Scanner) scanTokens() error {
+
+	var (
+		err error
+	)
 	for !s.isAtEnd() {
 		s.start = s.current
-		s.scanToken()
+		err = s.scanToken()
+		if err != nil {
+			return err
+		}
 
 	}
 	endToken := token.Token{
@@ -139,9 +144,10 @@ func (s *Scanner) scanTokens() {
 		Line:    s.line,
 	}
 	s.tokens = append(s.tokens, endToken)
+	return nil
 }
 
-func (s *Scanner) scanToken() {
+func (s *Scanner) scanToken() error {
 	c := s.advance()
 	switch c {
 	case '(':
@@ -214,24 +220,26 @@ func (s *Scanner) scanToken() {
 			s.addIdentifier()
 
 		} else {
-			s.error(s.line, "unexpected character.")
+			l.Errorf("unexpected character.")
+			return fmt.Errorf("unexpected character.")
 		}
 	}
+	return nil
 }
 
 func (s *Scanner) advance() rune {
+	res := s.runes[s.current]
 	s.current++
-	return s.runes[s.current-1]
+	return res
 }
 
 func (s *Scanner) match(expected rune) bool {
 	if s.isAtEnd() {
 		return false
 	}
-	if s.runes[s.current-1] != expected {
+	if s.runes[s.current] != expected {
 		return false
 	}
-
 	s.current++
 	return true
 }
@@ -245,7 +253,7 @@ func (s *Scanner) peek() rune {
 }
 
 func (s *Scanner) peekNext() rune {
-	if s.current >= len(s.runes) {
+	if s.current+1 >= len(s.runes) {
 		return '\x00'
 	}
 	return s.runes[s.current+1]
@@ -276,13 +284,12 @@ func (s *Scanner) addString() {
 	}
 
 	if s.isAtEnd() {
-		s.error(s.line, "unterminal string")
+		l.Error("unterminal string")
 		return
 	}
 
 	s.advance()
 	value := s.runes[s.start+1 : s.current-1]
-	fmt.Println("--add string--", value)
 	s.addTokenWithValue(token.STRING, value)
 }
 
