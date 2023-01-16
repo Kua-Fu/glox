@@ -71,7 +71,7 @@ func StartInterpreter(args []string) {
 			l.Errorf("eval err: %v", err)
 			continue
 		}
-		l.Infof("--eval-- %v", res)
+		fmt.Printf("--eval-- %v\n", res)
 
 	}
 
