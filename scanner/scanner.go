@@ -24,8 +24,8 @@ type Scanner struct {
 	current int           // token current location
 }
 
-// ScannerLine start scanner
-func ScannerLine(line string) ([]token.Token, error) {
+// ScanLine start scanner
+func ScanLine(line string) ([]token.Token, error) {
 
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync() // flushes buffer, if any

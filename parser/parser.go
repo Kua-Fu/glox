@@ -12,20 +12,25 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	l *zap.SugaredLogger
+)
+
 // Parser parser source code
 type Parser struct {
 	Tokens  []token.Token // parser token slice
 	Current int           // parser current location
 }
 
+// StartParse start parse
 func StartParse(args []string) {
 
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync() // flushes buffer, if any
-	sugar := logger.Sugar()
+	l = logger.Sugar()
 	// get tokens
 	if len(args) > 2 {
-		fmt.Println("usage: glox [script]")
+		l.Info("usage: glox [script]")
 		return
 	}
 
@@ -36,10 +41,10 @@ func StartParse(args []string) {
 		if line == "" {
 			break
 		}
-		tokens, err := scanner.ScannerLine(line)
+		tokens, err := scanner.ScanLine(line)
 		if err != nil {
-			sugar.Errorf("scanner err: %v", err)
-			return
+			l.Errorf("scanner err: %v", err)
+			continue
 		}
 		parser := Parser{
 			Tokens: tokens,
@@ -47,8 +52,8 @@ func StartParse(args []string) {
 		expr, err := parser.Parse()
 
 		if err != nil {
-			sugar.Errorf("parse err: %v", err)
-			return
+			l.Errorf("parse err: %v", err)
+			continue
 		}
 
 		ast := astprinter.AstPrinter{
@@ -60,6 +65,7 @@ func StartParse(args []string) {
 
 }
 
+// Parse exec parse
 func (p *Parser) Parse() (expr.Expr, error) {
 	return p.expression()
 
