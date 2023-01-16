@@ -3,6 +3,7 @@ package scanner
 import (
 	"bufio"
 	"fmt"
+	"learning/glox/token"
 	"os"
 	"strconv"
 
@@ -13,16 +14,16 @@ import (
 type Scanner struct {
 	Logger   *zap.SugaredLogger
 	HadError bool
-	source   string  // 原始代码
-	runes    []rune  // 原始代码的字符列表
-	tokens   []Token // 词法分词列表
-	line     int     // 当前所在的行信息
-	start    int     // 标记出现的开始位置
-	current  int     // 当前扫描的位置
+	source   string        // source code
+	runes    []rune        // source code rune slice
+	tokens   []token.Token // tokens
+	line     int           // location
+	start    int           // token start location
+	current  int           // token current location
 }
 
-// StartScanner 开始扫描
-func StartScanner(args []string) {
+// ScannerLine start scanner
+func ScannerLine(line string) ([]token.Token, error) {
 
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync() // flushes buffer, if any
@@ -34,12 +35,32 @@ func StartScanner(args []string) {
 		start:    0,
 		current:  0,
 	}
-	// 2. 如果传参为1个，表示文件名称
+	s.run(line, false)
+	return s.tokens, nil
+
+}
+
+// StartScanner start scanner
+func StartScanner(args []string) ([]token.Token, error) {
+
+	logger, _ := zap.NewDevelopment()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+	s := Scanner{
+		Logger:   sugar,
+		HadError: false,
+		line:     1,
+		start:    0,
+		current:  0,
+	}
+	// 2. if only one arg, is source file name
 	if len(args) == 2 {
 		s.runFile(args[1])
 	} else {
 		s.runPrompt()
 	}
+
+	return s.tokens, nil
 
 }
 
@@ -49,7 +70,7 @@ func (s *Scanner) runFile(path string) {
 		fmt.Printf("read file: %s, err: %v \n", path, err)
 		return
 	}
-	s.run(string(data))
+	s.run(string(data), true)
 	if s.HadError {
 		os.Exit(65)
 	}
@@ -64,23 +85,25 @@ func (s *Scanner) runPrompt() {
 		if line == "" {
 			break
 		}
-		s.run(line)
+		s.run(line, true)
 		s.HadError = false
 	}
 }
 
-func (s *Scanner) run(source string) {
+func (s *Scanner) run(source string, print bool) {
 	// s.Logger.Infof("--run scanner: %s--\n", source)
 	s.source = source
 	s.runes = []rune(source)
-	s.tokens = []Token{}
+	s.tokens = []token.Token{}
 	s.start = 0
 	s.current = 0
 	s.line = 1
 	s.HadError = false
 	s.scanTokens()
-	for _, token := range s.tokens {
-		s.Logger.Info(token)
+	if print {
+		for _, token := range s.tokens {
+			s.Logger.Info(token)
+		}
 	}
 
 }
@@ -109,8 +132,8 @@ func (s *Scanner) scanTokens() {
 		s.scanToken()
 
 	}
-	endToken := Token{
-		Type:    EOF,
+	endToken := token.Token{
+		Type:    token.EOF,
 		Lexeme:  "",
 		Literal: nil,
 		Line:    s.line,
@@ -122,67 +145,67 @@ func (s *Scanner) scanToken() {
 	c := s.advance()
 	switch c {
 	case '(':
-		s.addToken(LEFTPAREN)
+		s.addToken(token.LEFTPAREN)
 	case ')':
-		s.addToken(RIGHTPAREN)
+		s.addToken(token.RIGHTPAREN)
 	case '{':
-		s.addToken(LEFTBRACE)
+		s.addToken(token.LEFTBRACE)
 	case '}':
-		s.addToken(RIGHTBRACE)
+		s.addToken(token.RIGHTBRACE)
 	case ',':
-		s.addToken(COMMA)
+		s.addToken(token.COMMA)
 	case '.':
-		s.addToken(DOT)
+		s.addToken(token.DOT)
 	case '-':
-		s.addToken(MINUS)
+		s.addToken(token.MINUS)
 	case '+':
-		s.addToken(PLUS)
+		s.addToken(token.PLUS)
 	case ';':
-		s.addToken(SEMICOLON)
+		s.addToken(token.SEMICOLON)
 	case '*':
-		s.addToken(STAR)
+		s.addToken(token.STAR)
 	case '!':
 		if s.match('=') {
-			s.addToken(BANGEQUAL)
+			s.addToken(token.BANGEQUAL)
 		} else {
-			s.addToken(BANG)
+			s.addToken(token.BANG)
 		}
 	case '=':
 		if s.match('=') {
-			s.addToken(EQUALEQUAL)
+			s.addToken(token.EQUALEQUAL)
 		} else {
-			s.addToken(EQUAL)
+			s.addToken(token.EQUAL)
 		}
 	case '<':
 		if s.match('=') {
-			s.addToken(LESSEQUAL)
+			s.addToken(token.LESSEQUAL)
 		} else {
-			s.addToken(LESS)
+			s.addToken(token.LESS)
 		}
 	case '>':
 		if s.match('=') {
-			s.addToken(GREATEREQUAL)
+			s.addToken(token.GREATEREQUAL)
 		} else {
-			s.addToken(GREATER)
+			s.addToken(token.GREATER)
 		}
 
 	case '/':
 		if s.match('/') {
-			// 注释
+			// comment
 			for s.peek() != '\n' && !s.isAtEnd() {
 				s.advance()
 			}
 
 		} else {
-			s.addToken(SLASH)
+			s.addToken(token.SLASH)
 		}
 	case ' ', '\r', '\t':
-		// 忽略空白字符
+		// ignore null char
 	case '\n':
 		s.line++
 
 	case '"':
-		// 字符串常量
+		// string
 		s.addString()
 	default:
 		if s.isDigit(c) {
@@ -213,7 +236,7 @@ func (s *Scanner) match(expected rune) bool {
 	return true
 }
 
-// 前瞻，不会消耗字符
+// peek，will not consume char
 func (s *Scanner) peek() rune {
 	if s.isAtEnd() {
 		return '\x00'
@@ -228,13 +251,13 @@ func (s *Scanner) peekNext() rune {
 	return s.runes[s.current+1]
 }
 
-func (s *Scanner) addToken(tType TokenType) {
+func (s *Scanner) addToken(tType token.Type) {
 	s.addTokenWithValue(tType, nil)
 }
 
-func (s *Scanner) addTokenWithValue(tType TokenType, value interface{}) {
+func (s *Scanner) addTokenWithValue(tType token.Type, value interface{}) {
 	text := string(s.runes[s.start:s.current])
-	token := Token{
+	token := token.Token{
 		Type:    tType,
 		Lexeme:  text,
 		Literal: value,
@@ -243,7 +266,7 @@ func (s *Scanner) addTokenWithValue(tType TokenType, value interface{}) {
 	s.tokens = append(s.tokens, token)
 }
 
-// 获取字符串常量
+// get string value
 func (s *Scanner) addString() {
 	for s.peek() != '"' && !s.isAtEnd() {
 		if s.peek() == '\n' {
@@ -260,10 +283,10 @@ func (s *Scanner) addString() {
 	s.advance()
 	value := s.runes[s.start+1 : s.current-1]
 	fmt.Println("--add string--", value)
-	s.addTokenWithValue(STRING, value)
+	s.addTokenWithValue(token.STRING, value)
 }
 
-// 数字
+// number
 func (s *Scanner) isDigit(r rune) bool {
 	return r >= '0' && r <= '9'
 }
@@ -285,12 +308,11 @@ func (s *Scanner) addNumber() {
 	value := string(s.runes[s.start:s.current])
 
 	fValue, _ := strconv.ParseFloat(value, 64)
-	fmt.Println("--add value--", s.runes, s.start, s.current, fValue)
-	s.addTokenWithValue(NUMBER, fValue)
+	s.addTokenWithValue(token.NUMBER, fValue)
 
 }
 
-// 标识符
+// identifier
 func (s *Scanner) isAlpha(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r == '_')
 }
@@ -304,9 +326,9 @@ func (s *Scanner) addIdentifier() {
 		s.advance()
 	}
 	text := string(s.runes[s.start:s.current])
-	tType, ok := Keywords[text]
+	tType, ok := token.Keywords[text]
 	if !ok {
-		tType = IDENTIFIER
+		tType = token.IDENTIFIER
 	}
 	s.addToken(tType)
 }

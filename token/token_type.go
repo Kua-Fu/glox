@@ -1,102 +1,102 @@
-package scanner
+package token
 
-// TokenType 定义token类型，使用 go enum 类型
-type TokenType int
+// Type define token type, use go enum
+type Type int
 
 const (
-	// 1. 单字符的token
+	// 1. one char token
 
-	// LEFTPAREN ( 左括号
-	LEFTPAREN TokenType = iota
-	// RIGHTPAREN 右括号 )
+	// LEFTPAREN (
+	LEFTPAREN Type = iota
+	// RIGHTPAREN )
 	RIGHTPAREN
-	// LEFTBRACE { 左花括号
+	// LEFTBRACE {
 	LEFTBRACE
-	// RIGHTBRACE } 右花括号
+	// RIGHTBRACE }
 	RIGHTBRACE
-	// COMMA , 逗号
+	// COMMA ,
 	COMMA
-	// DOT . 点号
+	// DOT . dot
 	DOT
-	// MINUS - 减号/负号
+	// MINUS -
 	MINUS
-	// PLUS + 加号
+	// PLUS +
 	PLUS
-	// SEMICOLON ; 分号
+	// SEMICOLON ;
 	SEMICOLON
-	// SLASH / 斜线/除法
+	// SLASH /
 	SLASH
-	// STAR * 星号/乘法
+	// STAR *
 	STAR
 
-	// 2. 单个或者两个字符的token
+	// 2. one or two char token
 
-	// BANG ! 感叹号
+	// BANG !
 	BANG
-	// BANGEQUAL != 不等于
+	// BANGEQUAL !=
 	BANGEQUAL
-	// EQUAL = 等于
+	// EQUAL =
 	EQUAL
-	// EQUALEQUAL == 等于
+	// EQUALEQUAL ==
 	EQUALEQUAL
-	// GREATER > 大于
+	// GREATER >
 	GREATER
-	// GREATEREQUAL >= 大于等于
+	// GREATEREQUAL >=
 	GREATEREQUAL
-	// LESS < 小于
+	// LESS <
 	LESS
-	// LESSEQUAL <= 小于等于
+	// LESSEQUAL <=
 	LESSEQUAL
 
-	// 文字
+	// text
 
-	// IDENTIFIER 标识符
+	// IDENTIFIER identifier
 	IDENTIFIER
-	// STRING 字符串
+	// STRING string
 	STRING
-	// NUMBER 数字
+	// NUMBER number
 	NUMBER
 
-	// keyword 关键字
+	// keyword keyword
 
-	// AND and 逻辑运算符
+	// AND and
 	AND
-	// CLASS class 类
+	// CLASS class
 	CLASS
 	// ELSE if else
 	ELSE
-	// FALSE false 布尔
+	// FALSE false
 	FALSE
-	// FUN fun 函数
+	// FUN fun
 	FUN
-	// FOR for 循环
+	// FOR for
 	FOR
-	// IF if 判断
+	// IF if
 	IF
-	// NIL nil 空值
+	// NIL nil
 	NIL
-	// OR or 逻辑运算符
+	// OR or
 	OR
-	// PRINT print 输出
+	// PRINT print
 	PRINT
-	// RETURN return 返回
+	// RETURN return
 	RETURN
-	// SUPER super 父类
+	// SUPER super
 	SUPER
-	// THIS this 类
+	// THIS this
 	THIS
-	// TRUE true 布尔
+	// TRUE true
 	TRUE
-	// VAR var 变量
+	// VAR var
 	VAR
-	// WHILE while 循环
+	// WHILE while
 	WHILE
 
-	// EOF eof 结束符
+	// EOF eof
 	EOF
 )
 
-func (tokenType TokenType) String() string {
+func (tokenType Type) String() string {
 	var (
 		res string
 	)

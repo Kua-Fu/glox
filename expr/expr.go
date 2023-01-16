@@ -2,53 +2,53 @@ package expr
 
 import (
 	"fmt"
-	"learning/glox/scanner"
+	"learning/glox/token"
 )
 
-// Expr 表达式接口，主要实现 visit(), 目前用于打印 ast
+// Expr interface{} implement visit() method, to print ast
 type Expr interface {
 	Visit() string
 }
 
-// Binary 二元表达式
+// Binary binary expr
 type Binary struct {
 	Left     Expr
-	Operator scanner.Token
+	Operator token.Token
 	Right    Expr
 }
 
-// Grouping 圆括号表达式
+// Grouping grouping expr
 type Grouping struct {
 	Expression Expr
 }
 
-// Literal 标识符表达式
+// Literal literal expr
 type Literal struct {
 	Value interface{}
 }
 
-// Unary 一元表达式
+// Unary unary expr
 type Unary struct {
-	Operator scanner.Token
+	Operator token.Token
 	Right    Expr
 }
 
-// Variable 变量表达式
+// Variable var expr
 type Variable struct {
-	Name scanner.Token
+	Name token.Token
 }
 
-// Visit 二元表达式的打印 ast 接口
+// Visit binary expr implement visit method
 func (b *Binary) Visit() string {
 	return parenthesize(b.Operator.Lexeme, b.Left, b.Right)
 }
 
-// Visit 圆括号表达式的打印 ast 接口
+// Visit grouping expr implement visit method
 func (g *Grouping) Visit() string {
 	return parenthesize("group", g.Expression)
 }
 
-// Visit 标识符表达式的打印 ast 接口
+// Visit literal expr implement visit method
 func (l *Literal) Visit() string {
 	if l.Value == nil {
 		return "nil"
@@ -56,12 +56,12 @@ func (l *Literal) Visit() string {
 	return fmt.Sprintf("%v", l.Value)
 }
 
-// Visit 一元表达式的打印 ast 接口
+// Visit unary expr implement visit method
 func (u *Unary) Visit() string {
 	return parenthesize(u.Operator.Lexeme, u.Right)
 }
 
-// Visit 变量表达式的打印 ast 接口
+// Visit variable expr implement visit method
 func (v *Variable) Visit() string {
 	return v.Name.Lexeme
 }

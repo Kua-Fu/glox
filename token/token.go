@@ -1,18 +1,18 @@
-package scanner
+package token
 
 import "fmt"
 
-// Token token 结构体
+// Token token struct
 type Token struct {
-	Type    TokenType   // token类型
-	Lexeme  string      // 词素
-	Literal interface{} // 实际的值
-	Line    int         // token所在的行
+	Type    Type        // token type
+	Lexeme  string      // token string value
+	Literal interface{} // token real value
+	Line    int         // token location
 }
 
 var (
-	// Keywords 关键字
-	Keywords = map[string]TokenType{
+	// Keywords keyword
+	Keywords = map[string]Type{
 		"and":    AND,
 		"class":  CLASS,
 		"else":   ELSE,

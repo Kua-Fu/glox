@@ -3,26 +3,25 @@ package astprinter
 import (
 	"fmt"
 	"learning/glox/expr"
-	"learning/glox/scanner"
+	"learning/glox/token"
 )
 
-// AstPrinter 用于打印某个表达式的 ast
+// AstPrinter print expr ast
 type AstPrinter struct {
 	Expr expr.Expr
 }
 
-// Print 真实打印 ast 方法
+// Print print ast
 func (ap AstPrinter) Print() {
-
 	astStr := ap.Expr.Visit()
-	fmt.Println("---ast string--", astStr)
+	fmt.Println("--ast--", astStr)
 }
 
-// StartPrint 入口函数
+// StartPrint main method
 func StartPrint() {
 
-	token := scanner.Token{
-		Type:    scanner.MINUS,
+	iToken := token.Token{
+		Type:    token.MINUS,
 		Lexeme:  "-",
 		Literal: nil,
 		Line:    1,
@@ -31,11 +30,11 @@ func StartPrint() {
 		Value: 123,
 	}
 	unary := expr.Unary{
-		Operator: token,
+		Operator: iToken,
 		Right:    &rightExpr,
 	}
-	newToken := scanner.Token{
-		Type:    scanner.STAR,
+	newToken := token.Token{
+		Type:    token.STAR,
 		Lexeme:  "*",
 		Literal: nil,
 		Line:    1,
